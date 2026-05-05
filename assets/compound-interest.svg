@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#D97706;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#DC2626;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="shadow2" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="450" fill="#FAFAFA" rx="12"/>
+
+  <!-- Title -->
+  <text x="400" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1E1B4B">知识复利健康度模型</text>
+  <text x="400" y="52" text-anchor="middle" font-size="10" fill="#6B7280">Knowledge Compound Interest — 量化知识库的"新陈代谢速率"</text>
+
+  <!-- Four metrics -->
+  <!-- Metric 1: 录入率 -->
+  <rect x="40" y="75" width="165" height="110" rx="10" fill="white" stroke="#E5E7EB" stroke-width="1" filter="url(#shadow2)"/>
+  <circle cx="75" cy="105" r="18" fill="#EEF2FF"/>
+  <text x="75" y="111" text-anchor="middle" font-size="16">📥</text>
+  <text x="130" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#1F2937">录入率</text>
+  <text x="122" y="118" text-anchor="start" font-size="9" fill="#6B7280">新增wiki页 / 捕获箱入口</text>
+  <line x1="50" y1="130" x2="195" y2="130" stroke="#F3F4F6" stroke-width="1"/>
+  <text x="122" y="148" text-anchor="middle" font-size="9" fill="#475569">捕获的内容有多少</text>
+  <text x="122" y="163" text-anchor="middle" font-size="9" fill="#475569">真正进入了正式体系？</text>
+
+  <!-- Metric 2: 引用率 -->
+  <rect x="225" y="75" width="165" height="110" rx="10" fill="white" stroke="#E5E7EB" stroke-width="1" filter="url(#shadow2)"/>
+  <circle cx="260" cy="105" r="18" fill="#FEF3C7"/>
+  <text x="260" y="111" text-anchor="middle" font-size="16">🔗</text>
+  <text x="315" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#1F2937">引用率</text>
+  <text x="307" y="118" text-anchor="start" font-size="9" fill="#6B7280">被引用次数 / 总页面</text>
+  <line x1="235" y1="130" x2="380" y2="130" stroke="#F3F4F6" stroke-width="1"/>
+  <text x="307" y="148" text-anchor="middle" font-size="9" fill="#475569">wiki里的内容</text>
+  <text x="307" y="163" text-anchor="middle" font-size="9" fill="#475569">有人在用吗？</text>
+
+  <!-- Metric 3: 更新率 -->
+  <rect x="410" y="75" width="165" height="110" rx="10" fill="white" stroke="#E5E7EB" stroke-width="1" filter="url(#shadow2)"/>
+  <circle cx="445" cy="105" r="18" fill="#ECFDF5"/>
+  <text x="445" y="111" text-anchor="middle" font-size="16">✏️</text>
+  <text x="500" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#1F2937">更新率</text>
+  <text x="492" y="118" text-anchor="start" font-size="9" fill="#6B7280">30天内编辑 / 总页面</text>
+  <line x1="420" y1="130" x2="565" y2="130" stroke="#F3F4F6" stroke-width="1"/>
+  <text x="492" y="148" text-anchor="middle" font-size="9" fill="#475569">知识在迭代还是</text>
+  <text x="492" y="163" text-anchor="middle" font-size="9" fill="#475569">写完就没人管了？</text>
+
+  <!-- Metric 4: 泄漏率 -->
+  <rect x="595" y="75" width="165" height="110" rx="10" fill="white" stroke="#E5E7EB" stroke-width="1" filter="url(#shadow2)"/>
+  <circle cx="630" cy="105" r="18" fill="#FEE2E2"/>
+  <text x="630" y="111" text-anchor="middle" font-size="16">💧</text>
+  <text x="685" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#1F2937">泄漏率</text>
+  <text x="677" y="118" text-anchor="start" font-size="9" fill="#6B7280">群聊价值内容 / 已录入</text>
+  <line x1="605" y1="130" x2="750" y2="130" stroke="#F3F4F6" stroke-width="1"/>
+  <text x="677" y="148" text-anchor="middle" font-size="9" fill="#475569">有多少知识产生了</text>
+  <text x="677" y="163" text-anchor="middle" font-size="9" fill="#475569">但绕过了体系？</text>
+
+  <!-- Arrow down to formula -->
+  <line x1="400" y1="190" x2="400" y2="215" stroke="#94A3B8" stroke-width="1.5"/>
+  <polygon points="400,220 395,212 405,212" fill="#94A3B8"/>
+
+  <!-- Formula box -->
+  <rect x="200" y="225" width="400" height="45" rx="8" fill="#1E1B4B" filter="url(#shadow2)"/>
+  <text x="400" y="248" text-anchor="middle" font-size="11" fill="#E0E7FF">复利指数 = weighted_avg(录入率, 引用率, 更新率, 1-泄漏率)</text>
+  <text x="400" y="264" text-anchor="middle" font-size="9" fill="#A5B4FC">加权平均 → 0~1之间的综合健康度</text>
+
+  <!-- Arrow down to status -->
+  <line x1="400" y1="270" x2="400" y2="295" stroke="#94A3B8" stroke-width="1.5"/>
+  <polygon points="400,300 395,292 405,292" fill="#94A3B8"/>
+
+  <!-- Status spectrum -->
+  <!-- Green zone -->
+  <rect x="60" y="305" width="160" height="75" rx="10" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5" filter="url(#shadow2)"/>
+  <rect x="60" y="305" width="160" height="24" rx="10" fill="url(#greenGrad)"/>
+  <rect x="60" y="319" width="160" height="10" fill="url(#greenGrad)"/>
+  <text x="140" y="322" text-anchor="middle" font-size="11" font-weight="600" fill="white">🟢 > 0.7 健康增长</text>
+  <text x="140" y="350" text-anchor="middle" font-size="10" fill="#065F46">知识在积累</text>
+  <text x="140" y="367" text-anchor="middle" font-size="10" fill="#065F46">系统活跃运转</text>
+
+  <!-- Yellow zone -->
+  <rect x="240" y="305" width="160" height="75" rx="10" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow2)"/>
+  <rect x="240" y="305" width="160" height="24" rx="10" fill="url(#yellowGrad)"/>
+  <rect x="240" y="319" width="160" height="10" fill="url(#yellowGrad)"/>
+  <text x="320" y="322" text-anchor="middle" font-size="11" font-weight="600" fill="white">🟡 0.4-0.7 放缓</text>
+  <text x="320" y="350" text-anchor="middle" font-size="10" fill="#92400E">有使用但维护不足</text>
+  <text x="320" y="367" text-anchor="middle" font-size="10" fill="#92400E">需要关注</text>
+
+  <!-- Orange zone -->
+  <rect x="420" y="305" width="160" height="75" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.5" filter="url(#shadow2)"/>
+  <rect x="420" y="305" width="160" height="24" rx="10" fill="#EA580C"/>
+  <rect x="420" y="319" width="160" height="10" fill="#EA580C"/>
+  <text x="500" y="322" text-anchor="middle" font-size="11" font-weight="600" fill="white">🟠 0.2-0.4 停滞</text>
+  <text x="500" y="350" text-anchor="middle" font-size="10" fill="#9A3412">知识库开始"死亡"</text>
+  <text x="500" y="367" text-anchor="middle" font-size="10" fill="#9A3412">需要立即干预</text>
+
+  <!-- Red zone -->
+  <rect x="600" y="305" width="160" height="75" rx="10" fill="#FEF2F2" stroke="#DC2626" stroke-width="1.5" filter="url(#shadow2)"/>
+  <rect x="600" y="305" width="160" height="24" rx="10" fill="url(#redGrad)"/>
+  <rect x="600" y="319" width="160" height="10" fill="url(#redGrad)"/>
+  <text x="680" y="322" text-anchor="middle" font-size="11" font-weight="600" fill="white">🔴 &lt; 0.2 萎缩</text>
+  <text x="680" y="350" text-anchor="middle" font-size="10" fill="#991B1B">只出不进</text>
+  <text x="680" y="367" text-anchor="middle" font-size="10" fill="#991B1B">知识库名存实亡</text>
+
+  <!-- Bottom insight -->
+  <rect x="100" y="400" width="600" height="38" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="400" y="420" text-anchor="middle" font-size="10" fill="#475569">💡 核心洞察：知识库不长 ≠ "没人写"。真正的原因往往是：入口堵（捕获箱老化）+ 管线漏（泄漏率高）+ 框架空（覆盖空洞）</text>
+  <text x="400" y="433" text-anchor="middle" font-size="9" fill="#94A3B8">Knowledge Healer 同时诊断这三个根因，而非只看"文档过不过期"</text>
+</svg>

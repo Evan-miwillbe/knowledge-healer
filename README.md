@@ -131,32 +131,11 @@ baseline_path: ~/Desktop/knowledge-audit/baselines/latest.json
 
 ## 架构设计
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                      主CC（调度者+综合者）                   │
-│  初始化 → 文档采集 → 分派Agent → 综合报告 → 知识复利指数    │
-│                    + 直接执行：Inbox Aging / Coverage Gap   │
-└────────────────────────────┬─────────────────────────────┘
-                             │ spawn (并行)
-        ┌────────────┬───────┼───────┬────────────┐
-        │            │       │       │            │
-   ┌────▼────┐ ┌────▼────┐ ┌▼─────┐ ┌▼────────┐ ┌▼────────┐
-   │Staleness│ │Conflict │ │Links │ │  Drift  │ │ Leakage │
-   │ Agent   │ │  Agent  │ │Agent │ │  Agent  │ │  Agent  │
-   └────┬────┘ └────┬────┘ └──┬───┘ └────┬────┘ └────┬────┘
-        │            │         │          │            │
-   Wiki/Doc API  Doc Content  Link     IM Search   IM Scan +
-   + metadata    comparison   Check    (反驳信号)   Wiki Match
-        │            │         │          │            │
-        └────────────┴─────────┴────┬─────┴────────────┘
-                                    │
-                          ┌─────────▼──────────┐
-                          │    综合诊断报告      │
-                          │  7维交叉验证+优先级  │
-                          │  + 泄漏↔空洞匹配    │
-                          │  + 自校准更新        │
-                          └────────────────────┘
-```
+![Architecture](assets/architecture.svg)
+
+## 知识复利模型
+
+![Compound Interest](assets/compound-interest.svg)
 
 ## 设计哲学
 
