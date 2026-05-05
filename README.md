@@ -1,4 +1,12 @@
-# Knowledge Healer
+# Knowledge Healer 知识库自愈巡检
+
+> **核心价值**：3+2多Agent并行架构，对飞书知识库做7维健康诊断——不只找"文档有没有问题"，还找"该有但没有的内容"。
+>
+> **关键创新**：跨源交叉验证（文档 vs 群聊）检测知识漂移——文档没改，但群里有人说"我们现在不这么做了"。这是纯文档检查工具做不到的。
+>
+> **技术栈**：Claude Code + 飞书 CLI (lark-wiki / lark-doc / lark-im / lark-task / lark-calendar) | MIT License
+
+---
 
 **知识库自愈巡检系统** — 一个 Claude Code Skill，为飞书知识库提供多Agent并行健康诊断
 
@@ -192,7 +200,7 @@ depth: 3
 
 ### 前置条件
 
-- [飞书 CLI](https://github.com/AJ-Lark/feishu-cli)（需要 Wiki/Doc/IM 权限）
+- [飞书 CLI](https://github.com/nicepkg/feishu-cli)（需要 Wiki/Doc/IM 权限）
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 
 ### 安装
@@ -259,6 +267,23 @@ baseline_path: ~/Desktop/knowledge-audit/baselines/latest.json
 | `lark-cli task` | 任务数据辅助判定 |
 | `lark-cli calendar` | 日历数据辅助判定 |
 
+## 路线图
+
+- [x] v1.0: 7维诊断 + 3+2 Agent架构 + 跨源漂移检测
+- [x] v1.2: Token优化（Context合并 + 条件激活 + 增量巡检）
+- [ ] v1.3: 自动修复建议执行（一键更新过期文档）
+- [ ] v2.0: 知识图谱可视化 + 跨空间关联分析
+
+---
+
 ## License
 
 MIT
+
+---
+
+## 致谢
+
+本项目参加 [飞书 CLI 创作者大赛](https://bytedance.larkoffice.com/docx/HWgKdWfeSoDw36xu7EYctBrUnsg)，感谢飞书团队和 Way to AGI 社区。
+
+Built with [Claude Code](https://claude.ai/claude-code) + [飞书 CLI](https://github.com/nicepkg/feishu-cli)
