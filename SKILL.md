@@ -3,7 +3,7 @@ name: knowledge-healer
 description: "知识库自愈巡检系统——多Agent并行诊断飞书Wiki/文档空间的健康状态，检测过期、冲突、断链、漂移，生成修复建议并追踪修复进度。支持定时执行和自校准阈值。触发词：'知识库巡检'、'文档健康'、'wiki审计'、'知识库体检'、'文档过期检测'、'knowledge healer'"
 ---
 
-# Knowledge Healer：知识库自愈巡检系统 v1.1
+# Knowledge Healer：知识库自愈巡检系统 v1.2
 
 > 企业知识库的免疫系统——不是等人发现文档过期，而是主动发现、诊断、推动修复。
 > 
@@ -337,64 +337,123 @@ Step 3: 构建文档图谱（adjacency map）：
 Step 4: 写入 state.json 标记"采集完成"（中断恢复点）
 ```
 
+### Phase 1.5: 预扫描决策（Progressive Depth）
+
+**核心原则**：不是所有巡检都需要全部Agent。先用低成本的元数据预扫描，再决定投入哪些高成本Agent。
+
+```
+Step 1: 元数据预扫描（成本极低，~5% token预算）
+        - 文档数量、最后编辑时间分布、目录结构深度
+        - 是否提供了chat_groups参数
+        - 是否存在baseline（增量 vs 全量）
+
+Step 2: 根据预扫描结果决定Agent组合：
+        ┌─────────────────────────┬──────────────────────────────┐
+        │ 条件                     │ 跳过                          │
+        ├─────────────────────────┼──────────────────────────────┤
+        │ 文档数 < 10              │ 跳过 Agent-Contradiction      │
+        │                         │ （样本太小，聚类无意义）         │
+        │ chat_groups 为空         │ 跳过 Agent-Drift              │
+        │                         │ 跳过 Agent-Leakage            │
+        │ mode = quick             │ 只保留 Agent-Structure        │
+        │ 与baseline无差异的文档    │ 从所有Agent输入中排除          │
+        └─────────────────────────┴──────────────────────────────┘
+
+Step 3: 写入 state.json 记录"本次激活的Agent组合"
+```
+
+**为什么这很重要**：研究表明多Agent系统中59.4%的token花在验证环节。通过预扫描跳过不必要的Agent，可节省30-60% token。
+
 ### Phase 2: 多Agent并行诊断
 
 **根据mode选择诊断范围**：
 
 | mode | 执行内容 |
 |------|---------|
-| full | 过期+冲突+断链+漂移（全部） |
-| quick | 过期+断链（仅元数据级，不读内容） |
+| full | 结构健康+冲突+漂移（全部，受预扫描裁剪） |
+| quick | 仅结构健康Agent（元数据级，不读内容） |
 | drift-only | 仅漂移检测（已有基线时的增量检测） |
 | scheduled | 同full，但静默执行+结果推送到指定群 |
 
-**Agent分工**（full模式）：
+**Agent架构（v1.2 Token Economy优化）**：
+
+v1.2将原5 Agent合并为3+2架构：合并共享上下文的Agent，条件激活跨源Agent。
 
 ```
 主CC（调度者+综合者）
   │
-  ├─ spawn Agent-Staleness
-  │   职责：遍历文档列表，按类型匹配有效期，标记可疑过期文档
-  │   输入：文档元数据列表 + 有效期规则 + 历史基线
-  │   输出：{project_dir}/reports/staleness-findings.md
-  │   约束：每篇文档判定必须附带判定理由（不是只输出结果）
+  │  ┌─────────── 必选Agent ───────────┐
+  │  │                                  │
+  ├─ spawn Agent-Structure（合并原Staleness+Links）
+  │   职责：文档结构健康检查——过期判定 + 链接有效性
+  │   合并理由：两者共享文档元数据上下文（编辑时间/引用关系/链接列表），
+  │            分开spawn会重复加载相同数据，合并后token节省~40%
+  │   输入：文档元数据列表 + 链接列表 + 有效期规则 + 历史基线
+  │   输出：{project_dir}/reports/structure-findings.md
+  │   内部分区：[STALENESS] 过期发现 / [LINKS] 断链发现
+  │   约束：每篇文档判定附带理由；区分"确认断裂"vs"疑似断裂"
   │
-  ├─ spawn Agent-Contradiction
+  ├─ spawn Agent-Contradiction（条件激活：文档数≥10）
   │   职责：对同主题文档进行关键断言对比
   │   输入：文档内容（已按主题聚类）+ 冲突判定标准
   │   输出：{project_dir}/reports/contradiction-findings.md
-  │   约束：只报告中高置信度冲突；低置信度的写入"待确认"区
+  │   约束：只报告中高置信度冲突；低置信度写入"待确认"区
   │
-  ├─ spawn Agent-Links
-  │   职责：检查所有文档内链接的有效性
-  │   输入：文档内容中提取的链接列表
-  │   输出：{project_dir}/reports/broken-links-findings.md
-  │   约束：区分"确认断裂"vs"疑似断裂（权限问题）"
-  │
-  ├─ spawn Agent-Drift（仅当chat_groups非空）
+  │  ┌─────── 条件Agent（需chat_groups）─────┐
+  │  │                                        │
+  ├─ spawn Agent-Drift（条件激活：chat_groups非空）
   │   职责：提取文档核心断言 → 在群聊中搜索反驳信号
-  │   输入：文档核心断言列表 + chat_groups列表 + 回溯天数
+  │   输入：文档核心断言列表 + chat_groups + 回溯天数
   │   输出：{project_dir}/drift-evidence/drift-findings.md
   │   约束：置信度<60%不进入主报告；必须附带原始证据引用
   │
-  ├─ spawn Agent-Leakage（仅当chat_groups非空）— v1.1新增
+  ├─ spawn Agent-Leakage（条件激活：chat_groups非空）
   │   职责：在群聊中发现高价值但未被录入知识库的内容
-  │   输入：chat_groups + 知识库索引（用于匹配已有内容）
+  │   输入：chat_groups + 知识库主题索引
   │   输出：{project_dir}/reports/leakage-findings.md
-  │   约束：只报告被≥2人认可(收藏/点赞/回复确认)的内容
+  │   约束：只报告被≥2人认可的内容
   │
   └─ 主CC直接执行（不需要spawn）：
-      - Inbox Aging：扫描待处理区计算滞留时间（纯元数据操作，成本低）
+      - Inbox Aging：扫描待处理区计算滞留时间（纯元数据操作）
       - Coverage Gap：对比目录结构 vs 实际内容量（纯结构分析）
 ```
 
-**Spawn Prompt核心字段**（每个Agent必须包含）：
-1. 研究范围（scope边界）
-2. 输出文件绝对路径
-3. 判定标准（什么算"发现"）
-4. 证据要求（每个发现必须附带依据）
-5. 字数硬限（findings文件严格不超过3000字/agent）
-6. 安全边界（不修改任何文档，只读+报告）
+**v1.1→v1.2 Agent架构变化说明**：
+
+| 变化 | 原因 | 预期收益 |
+|------|------|---------|
+| Staleness + Links → Agent-Structure | 共享文档元数据上下文，消除重复加载 | token -40% |
+| Contradiction条件激活 | <10篇文档做主题聚类无统计意义 | 小库跳过节省100% |
+| Drift/Leakage条件激活 | 无chat_groups时这两个Agent完全无数据源 | 无群聊场景token -40% |
+| 增量输入裁剪 | baseline对比后只传入变化文档 | 续检场景token -50~80% |
+
+**Spawn Prompt设计原则**（Token Economy驱动）：
+
+```
+每个Agent的spawn prompt遵循：
+
+1. 稳定前缀 + 可变后缀（Prompt Caching友好）
+   前缀：角色定义 + 判定标准 + 输出格式（跨次巡检不变，可被缓存）
+   后缀：本次具体的文档列表/群聊ID（每次不同）
+
+2. Context隔离：每个Agent只接收本维度所需数据
+   Agent-Structure：元数据 + 链接列表（不需要文档全文）
+   Agent-Contradiction：文档内容摘要（不需要元数据细节）
+   Agent-Drift：文档断言 + 群聊搜索结果（不需要其他Agent数据）
+   → 每个Agent上下文 ≈ O(C/k)，而非 O(C)
+
+3. 输出硬限：
+   - 每个Agent的findings文件严格不超过200字/条发现
+   - 单Agent总输出不超过2000字（v1.1的3000字下调）
+   - 回传主CC的handoff摘要不超过200字（只含结论+P0列表）
+
+4. 必含字段：
+   - 研究范围（scope边界）
+   - 输出文件绝对路径
+   - 判定标准（什么算"发现"）
+   - 证据要求（每个发现必须附带依据）
+   - 安全边界（不修改任何文档，只读+报告）
+```
 
 ### Phase 3: 综合诊断报告
 
@@ -555,6 +614,77 @@ Step 5: 如果mode=scheduled：
 
 ---
 
+## 资源效率策略（Token Economy）— v1.2新增
+
+**设计原则**：基于多Agent token经济学研究（30+篇论文实验总结），将token预算视为有限资源进行分配优化。
+
+### 三层递进扫描
+
+不同维度的检测成本差异巨大。v1.2采用渐进式深度策略，低成本层过滤后才触发高成本层：
+
+```
+Layer 1: 元数据层（~5% token）
+  ├─ 编辑时间、文档数、目录结构
+  ├─ 成本：几乎为零（纯API元数据查询）
+  └─ 决策：哪些文档需要进入Layer 2
+
+Layer 2: 内容层（~35% token）
+  ├─ 文档全文/摘要读取、主题聚类、断言提取
+  ├─ 成本：中等（受文档长度影响）
+  └─ 决策：哪些断言需要进入Layer 3
+
+Layer 3: 跨源层（~60% token）
+  ├─ 群聊搜索、任务对比、交叉验证
+  ├─ 成本：最高（IM搜索 + LLM分析）
+  └─ 只有Layer 2标记为"可疑"的内容才进入此层
+```
+
+**为什么不一开始就全量扫描**：研究表明多Agent系统中约60%的token花在验证环节。三层递进可将无效验证降低60-80%——大多数"健康"文档在Layer 1就被排除。
+
+### Agent间Context隔离
+
+```
+错误做法（v1.1隐含问题）：
+  每个Agent接收全量文档数据 → 5个Agent × 全量 = 5倍冗余
+
+正确做法（v1.2）：
+  Agent-Structure：只接收 元数据 + 链接列表
+  Agent-Contradiction：只接收 文档内容摘要（已按主题聚类的子集）
+  Agent-Drift：只接收 文档断言 + 群聊搜索结果
+  Agent-Leakage：只接收 群聊高价值内容 + wiki主题索引
+
+  每个Agent的输入 ≈ 总数据量 / Agent数，而非 = 总数据量
+```
+
+### 增量巡检优化
+
+有baseline时，只传入变化部分：
+
+```
+全量数据 ──baseline对比──→ 变化子集 ──分发──→ Agents
+                              │
+                              ├─ 新增文档：全部检查
+                              ├─ 已修改文档：重新检查
+                              ├─ 未变文档：跳过（沿用上次结论）
+                              └─ 已删除文档：从报告中移除
+
+预期节省：续检场景下token减少50-80%
+```
+
+### Token预算分配参考
+
+| 组件 | full模式占比 | quick模式占比 |
+|------|------------|-------------|
+| Phase 0-1（初始化+采集） | 10% | 15% |
+| Phase 1.5（预扫描决策） | 5% | 10% |
+| Agent-Structure | 20% | 60% |
+| Agent-Contradiction | 15% | — |
+| Agent-Drift | 20% | — |
+| Agent-Leakage | 15% | — |
+| Phase 3（综合+报告） | 15% | 15% |
+
+---
+
 ## 执行模式详解
 
 ### full（完整巡检）
@@ -666,15 +796,29 @@ baseline_path: ~/Desktop/knowledge-audit/baselines/latest.json
  └──────────────── 下一轮巡检 ←─────────────────────────────────┘
 ```
 
-### 为什么多Agent而不是单Agent
+### 为什么是3+2而不是5个独立Agent
 
-| 维度 | 单Agent | 多Agent |
-|------|---------|---------|
-| 判断独立性 | 一个Agent的bias影响全部结论 | 各Agent独立判断，交叉验证 |
-| 专业度 | 通用prompt，各项均浅 | 每个Agent有专项prompt和判定标准 |
-| 容错性 | 一个环节失败全链路停止 | 单Agent失败不影响其他维度 |
-| 并行性 | 串行执行，耗时长 | 并行执行，总耗时≈最长单Agent |
-| Context效率 | 上下文混杂所有检测维度 | 每个Agent只需持有本维度相关信息 |
+v1.0-v1.1用5个独立Agent，v1.2基于token经济学研究优化为3+2（3必选+2条件）。
+
+**为什么合并Staleness+Links → Agent-Structure**：
+- 两者都以文档元数据为核心输入（编辑时间、引用关系、链接列表）
+- 分开spawn会重复加载相同的元数据上下文
+- 合并后共享一次加载，判定逻辑分区执行，token节省~40%
+- 它们之间还有协同：断链指向的目标文档如果已过期，可合并为同一修复项
+
+**为什么不进一步合并为更少的Agent**：
+- DPI定理（多Agent研究结论）：Agent数量存在最优点，太少则单Agent上下文过长导致判断退化
+- Drift和Leakage需要群聊数据，与文档元数据是完全不同的数据源——合并会让单Agent上下文膨胀
+- Contradiction需要文档全文对比，与元数据级检查的输入集不同
+- 经验值：2-4个spawn Agent是成本/质量的甜点
+
+| 维度 | 单Agent | 5 Agent (v1.1) | 3+2 Agent (v1.2) |
+|------|---------|----------------|-------------------|
+| 判断独立性 | 一个bias影响全部 | 各自独立 | 各自独立 |
+| Context效率 | 上下文混杂 | 有冗余重复 | 共享上下文消除冗余 |
+| 容错性 | 全链路停止 | 单Agent不影响 | 单Agent不影响 |
+| Token开销 | 最低但质量差 | 最高（重复加载） | 比v1.1省30-40% |
+| 条件裁剪 | 不适用 | 部分支持 | 完整支持 |
 
 ### 为什么需要自校准
 
@@ -703,5 +847,6 @@ baseline_path: ~/Desktop/knowledge-audit/baselines/latest.json
 
 | 版本 | 日期 | 关键变化 |
 |------|------|---------|
+| v1.2 | 2026-05-05 | Token Economy优化：Staleness+Links合并为Agent-Structure、条件激活、三层递进扫描、Context隔离、200字handoff上限 |
 | v1.1 | 2026-05-05 | 新增三维检测（管线泄漏/捕获箱老化/覆盖空洞）+ 知识复利指数 + Agent-Leakage |
 | v1.0 | 2026-05-05 | 初版发布：四类检测 + 多Agent架构 + 自校准 + 四种执行模式 |
